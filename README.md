@@ -61,18 +61,51 @@ echo '{"goal":{...},"initial":{...},"actions":[...]}' | npx tsx scripts/goap-pla
 git clone https://github.com/Etoile04/dev-pm.git ~/.openclaw/skills/dev-pm
 ```
 
-### 依赖技能（可选）
+### 依赖技能
 
-dev-pm 通过 §7.2 Skill Discovery 自动扫描可用技能。以下技能增强体验但不强制：
+dev-pm 在不同规模下调用不同的技能组合。**缺少对应技能时该步骤会降级为手动流程**（三段式 fallback），但安装全部依赖可获得最佳体验。
 
-| 技能 | 增强阶段 | 安装 |
-|------|----------|------|
-| `brainstorming` | Step 3 设计 | OpenClaw 内置 |
-| `writing-plans` | Step 4 计划 | OpenClaw 内置 |
-| `subagent-driven-development` | Step 6 开发 | OpenClaw superpowers |
-| `verification-before-completion` | Step 7 验证 | OpenClaw 内置 |
-| `requesting-code-review` | Step 8 审查 | OpenClaw superpowers |
-| `finishing-a-development-branch` | Step 9 收尾 | OpenClaw superpowers |
+#### 核心依赖（所有规模）
+
+这些技能在 dev-pm 的 S/M/L 流程中均可能被调用：
+
+| 技能 | 调用阶段 | 来源 | 安装 |
+|------|----------|------|------|
+| `verification-before-completion` | Step 7 验证 | OpenClaw 内置 | 自动可用 |
+| `requesting-code-review` | Step 8 审查 | [OpenClaw superpowers](https://github.com/openclaw/openclaw) | `~/.openclaw/skills/superpowers/requesting-code-review/` |
+| `receiving-code-review` | Step 8 审查反馈处理 | OpenClaw superpowers | `~/.openclaw/skills/superpowers/receiving-code-review/` |
+| `finishing-a-development-branch` | Step 9 分支收尾 | OpenClaw superpowers | `~/.openclaw/skills/superpowers/finishing-a-development-branch/` |
+| `nfmd-db-ops` | Step 6 DB 变更（触发时） | 自定义技能 | `~/.openclaw/skills/nfmd-db-ops/` |
+| `para-second-brain` | Step 10/11 知识归档 | 自定义技能 | `~/.openclaw/skills/para-second-brain/` |
+
+> **superpowers 技能包**是一组协同技能，包含 brainstorming、writing-plans、subagent-driven-development、dispatching-parallel-agents、requesting-code-review、receiving-code-review、finishing-a-development-branch 等。它们通常一起安装在同一目录下。
+
+#### M 级额外依赖
+
+| 技能 | 调用阶段 | 来源 | 安装 |
+|------|----------|------|------|
+| `brainstorming` | Step 1 设计决策澄清 | OpenClaw superpowers | `~/.openclaw/skills/superpowers/brainstorming/` |
+| `writing-plans` | Step 2 spec + plan 编写 | OpenClaw superpowers | `~/.openclaw/skills/superpowers/writing-plans/` |
+| `subagent-driven-development` | Step 3 开发执行 | OpenClaw superpowers | `~/.openclaw/skills/superpowers/subagent-driven-development/` |
+| `find-skills` | Step 5 资产审计 | 自定义技能 | `~/.openclaw/skills/find-skills/` |
+
+#### L 级额外依赖
+
+| 技能 | 调用阶段 | 来源 | 安装 |
+|------|----------|------|------|
+| `strategic-goal-tracking` | Step 1 MSPOT + OKR 对齐 | 自定义技能 | `~/.openclaw/skills/strategic-goal-tracking/` |
+| `dispatching-parallel-agents` | Step 6 并行开发 | OpenClaw superpowers | `~/.openclaw/skills/superpowers/dispatching-parallel-agents/` |
+| `darwin-skill` | 持续优化（增强步骤） | [alchaincyf/darwin-skill](https://github.com/alchaincyf/darwin-skill) | `~/.openclaw/skills/darwin-skill/` |
+
+#### 概念框架（非技能依赖，需用户自行维护）
+
+| 概念 | 用途 | 说明 |
+|------|------|------|
+| **MSPOT** | L 级 Step 1 战略对齐 | 项目在战略全景中的定位（MSPOT Project / Omissions）。需用户在 workspace 中维护 MSPOT 文档 |
+| **OKR** | L 级 Step 1 KR 对齐 | 项目推进哪个 OKR Key Result。需配合 `strategic-goal-tracking` 技能使用 |
+| **PARA** | Step 11 归档 | Projects / Areas / Resources / Archives 归档体系。需用户在 workspace 中建立对应目录结构 |
+
+> ⚠️ MSPOT、OKR、PARA 是 dev-pm 流程中引用的**管理框架**，不是可安装的技能。缺少它们时，对应步骤（主要是 L 级 Step 1 和 Step 11）会跳过或简化，不影响 M/S 级项目正常执行。
 
 ### 触发词
 

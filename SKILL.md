@@ -973,7 +973,7 @@ projects/
 
 | 模式 | 适用场景 | 示例 |
 |------|----------|------|
-| **编排器 + 专线 Worker** | 多数据源、多处理路径 | nucpot-db 编排 + librarian + extractor |
+| **编排器 + 专线 Worker** | 多数据源、多处理路径 | 主 agent 编排 + 专线 worker（如 DB agent + 文献提取 agent + 数据清洗 agent） |
 | **快慢线分离** | 实时 + 批量混合 | 快线：同步搜索提取；慢线：cron 消化回填 |
 | **三级缓存降级** | 数据源有优先级 | L1 本地 → L2 远程 → L3 知识库 |
 | **质量门控分级** | 输出置信度不同 | high → auto, medium → pending_review |
@@ -1008,7 +1008,7 @@ projects/
 | 质量验证 | subagent 或主 agent | verification-before-completion | `~/.openclaw/skills/verification-before-completion/SKILL.md` |
 | 代码审查 | 独立 reviewer | requesting/receiving-code-review | `~/.openclaw/skills/superpowers/requesting-code-review/SKILL.md` + `~/.openclaw/skills/superpowers/receiving-code-review/SKILL.md` |
 | 合并发布 | 主 agent | finishing-a-development-branch | `~/.openclaw/skills/superpowers/finishing-a-development-branch/SKILL.md` |
-| DB 变更 | 主 agent | nfmd-db-ops | `~/.openclaw/skills/nfmd-db-ops/SKILL.md` |
+| DB 变更 | 主 agent | 用户 DB 安全技能（如 `nfmd-db-ops`） | 用户自定义，路径见实际安装 |
 | 知识归档 | 主 agent | para-second-brain | `~/.openclaw/skills/para-second-brain/SKILL.md` |
 
 ### 7.2 Skill Discovery — 技能发现协议（Step 5 资产审计增强）

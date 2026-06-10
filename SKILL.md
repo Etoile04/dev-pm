@@ -4,6 +4,15 @@ description: >-
   新项目开发流程编排。用户提出要做新功能/新项目时触发，按 superpowers 规范驱动从需求澄清到归档复盘的全过程。
   按规模自适应：S(< 1天, 3步) / M(1-5天, 7步) / L(> 5天, 12步)。
   典型触发场景："帮我开发XX"、"做一个XX功能"、"启动XX项目"。
+triggers:
+  - 帮我开发
+  - 做个XX功能
+  - 启动XX项目
+  - 新项目
+  - 项目进展
+  - 继续
+  - 优化
+  - 重构
 ---
 
 # Dev PM — 项目开发经理
@@ -923,24 +932,22 @@ projects/
 └── ...
 ```
 
-**实例（NFMD Review 模块轨迹）**：
+**实例格式**（轨迹 → 模式蒸馏）：
 
-轨迹文件 `projects/_trajectories/fullstack-m-web-2026-06-02.jsonl`：
+轨迹文件格式（JSONL）：
 ```jsonl
-{"task_type":"api-design","approach":"shared-verify-module","result":"success","duration_min":45,"cost":2,"success":true,"lessons":"verifyAdmin 应第一时间提取为共享模块，不该写 3 遍"}
-{"task_type":"batch-query","approach":"naive-n-plus-1","result":"poor-performance","duration_min":30,"cost":3,"success":false,"lessons":"30 params × 10 unique sources = 300 RPC → 改为按 source_file 去重后 10 RPC"}
-{"task_type":"auth-security","approach":"next-public-prefix","result":"security-breach","duration_min":15,"cost":1,"success":false,"lessons":"NEXT_PUBLIC_ 前缀暴露到浏览器 JS，敏感 key 必须走 API route"}
+{"task_type":"api-design","approach":"shared-module","result":"success","duration_min":45,"cost":2,"success":true,"lessons":"公共模块应在第一天提取"}
+{"task_type":"batch-query","approach":"naive-n-plus-1","result":"poor-performance","duration_min":30,"cost":3,"success":false,"lessons":"批量查询应按 source 去重"}
 ```
 
 蒸馏后写入 `projects/_patterns.md`：
 ```markdown
-## Pattern: fullstack-api-auth
-- **Trigger**: M/L 级 Web 项目涉及认证 + API route + 前端调用
-- **Optimal Path**: Day 1 提取共享 verify 模块 → Day 2 实现 API route（不走 NEXT_PUBLIC_）→ Day 3 批量查询优化
-- **Avg Duration**: 90 min
-- **Success Rate**: 67%（2/3，N+1 和 NEXT_PUBLIC_ 是坑点）
-- **Failure Modes**: N+1 查询、敏感 key 泄露、verify 重复实现
-- **Avoid**: 不用 NEXT_PUBLIC_ 前缀放敏感 key；不做逐条 RPC 查询
+## Pattern: api-batch-query
+- **Trigger**: 涉及批量数据查询的任务
+- **Optimal Path**: 按 source 去重 → 批量查询 → 缓存结果
+- **Avg Duration**: 30 min
+- **Success Rate**: 80%
+- **Avoid**: 不逐条 RPC 查询
 ```
 
 ### 5.4 度量体系

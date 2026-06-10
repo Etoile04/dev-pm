@@ -4,6 +4,15 @@ description: >-
   新项目开发流程编排。用户提出要做新功能/新项目时触发，按 superpowers 规范驱动从需求澄清到归档复盘的全过程。
   按规模自适应：S(< 1天, 3步) / M(1-5天, 7步) / L(> 5天, 12步)。
   典型触发场景："帮我开发XX"、"做一个XX功能"、"启动XX项目"。
+triggers:
+  - 帮我开发
+  - 做个XX功能
+  - 启动XX项目
+  - 新项目
+  - 项目进展
+  - 继续
+  - 优化
+  - 重构
 ---
 
 # Dev PM — 项目开发经理
@@ -724,6 +733,7 @@ Step 10 蒸馏 → 写入完成？→ Step 11 归档
 | Code review 被跳过 | 主 agent 声称"代码简单不需要审查" | 🛑 STOP → 强制至少做安全扫描 | S 级做简化审查，M/L 级做完整审查 |
 | Reviewer 反馈全被忽视 | Critical 修复数为 0 | 检查 receiving-code-review 流程是否执行 | 主 agent 回顾每条反馈逐条处理 |
 | 经验蒸馏未执行 | Step 9 完成后直接进入 Step 11 | 🛑 STOP → 强制补做 Step 10 | 至少完成 3 个必答题 |
+| 需求/项目名模糊 | 用户描述无法精确匹配 projects/ | 模糊匹配 README.md 关键词 → 多候选让用户选 | 零匹配时列出所有活跃项目 |
 
 ---
 
@@ -922,24 +932,22 @@ projects/
 └── ...
 ```
 
-**实例（NFMD Review 模块轨迹）**：
+**实例格式**（轨迹 → 模式蒸馏）：
 
-轨迹文件 `projects/_trajectories/fullstack-m-web-2026-06-02.jsonl`：
+轨迹文件格式（JSONL）：
 ```jsonl
-{"task_type":"api-design","approach":"shared-verify-module","result":"success","duration_min":45,"cost":2,"success":true,"lessons":"verifyAdmin 应第一时间提取为共享模块，不该写 3 遍"}
-{"task_type":"batch-query","approach":"naive-n-plus-1","result":"poor-performance","duration_min":30,"cost":3,"success":false,"lessons":"30 params × 10 unique sources = 300 RPC → 改为按 source_file 去重后 10 RPC"}
-{"task_type":"auth-security","approach":"next-public-prefix","result":"security-breach","duration_min":15,"cost":1,"success":false,"lessons":"NEXT_PUBLIC_ 前缀暴露到浏览器 JS，敏感 key 必须走 API route"}
+{"task_type":"api-design","approach":"shared-module","result":"success","duration_min":45,"cost":2,"success":true,"lessons":"公共模块应在第一天提取"}
+{"task_type":"batch-query","approach":"naive-n-plus-1","result":"poor-performance","duration_min":30,"cost":3,"success":false,"lessons":"批量查询应按 source 去重"}
 ```
 
 蒸馏后写入 `projects/_patterns.md`：
 ```markdown
-## Pattern: fullstack-api-auth
-- **Trigger**: M/L 级 Web 项目涉及认证 + API route + 前端调用
-- **Optimal Path**: Day 1 提取共享 verify 模块 → Day 2 实现 API route（不走 NEXT_PUBLIC_）→ Day 3 批量查询优化
-- **Avg Duration**: 90 min
-- **Success Rate**: 67%（2/3，N+1 和 NEXT_PUBLIC_ 是坑点）
-- **Failure Modes**: N+1 查询、敏感 key 泄露、verify 重复实现
-- **Avoid**: 不用 NEXT_PUBLIC_ 前缀放敏感 key；不做逐条 RPC 查询
+## Pattern: api-batch-query
+- **Trigger**: 涉及批量数据查询的任务
+- **Optimal Path**: 按 source 去重 → 批量查询 → 缓存结果
+- **Avg Duration**: 30 min
+- **Success Rate**: 80%
+- **Avoid**: 不逐条 RPC 查询
 ```
 
 ### 5.4 度量体系
@@ -1063,9 +1071,17 @@ ls ~/.openclaw/skills/*/SKILL.md ~/.openclaw/workspace/skills/*/SKILL.md 2>/dev/
 ### 用户说"帮我做个 X"
 
 ```
-1. 评估规模（§1）
-2. 告知用户规模和流程
-3. 按规模执行流水线（§2）
+1. 需求澄清前置检查：
+   - 需求明确（有具体功能/技术栈/交付物）→ 直接评估规模（§1）
+   - 需求模糊（缺少上下文/范围不清晰/指代不明）→ 先澄清再评估：
+     a. 如果是已有项目相关 → 扫描 projects/ 定位项目后确认
+     b. 如果是新需求 → 用 §3 brainstorming 的开放问题逐个澄清
+     c. 仍无法确定 → 🛑 STOP，列出 2-3 个可能理解让用户选择
+   ⚠️ 不跳过规模评估直接执行——即使看起来像 S 级也要走 §1 判断
+
+2. 评估规模（§1）
+3. 告知用户规模和流程 → 🔴 CHECKPOINT · 规模确认
+4. 按规模执行流水线（§2）
 ```
 
 ### 用户说"X 项目进展如何"
@@ -1111,12 +1127,24 @@ ls ~/.openclaw/skills/*/SKILL.md ~/.openclaw/workspace/skills/*/SKILL.md 2>/dev/
 ### 用户说"继续 X 项目"（或 session 启动自动触发）
 
 ```
-1. 执行 §4.5 上下文恢复协议
-2. 检查 SIGNALS.md 是否有未处理信号
-3. 检查 drift_score 是否超阈值
-4. 输出恢复摘要 + 等用户确认
-5. 继续执行当前 step
+1. 模糊匹配定位项目：
+   - 精确匹配：projects/<exact-name>/STATE.json 存在 → 直接恢复
+   - 模糊匹配：扫描 projects/*/README.md，用关键词匹配用户描述
+     （例：用户说"文献管道" → 匹配 README.md 中含"文献"/"pipeline"/"extraction"的项目）
+   - 多匹配 → 列出候选让用户选择
+   - 零匹配 → 列出所有活跃项目让用户指定，不猜测
+
+2. 匹配成功后，执行 §4.5 上下文恢复协议
+3. 检查 SIGNALS.md 是否有未处理信号
+4. 检查 drift_score 是否超阈值
+5. 输出恢复摘要 + 等用户确认
+6. 继续执行当前 step
 ```
+
+**失败 fallback**（三段式）：
+- 模糊匹配返回多个候选 → 列出候选（名称+一句话描述），让用户选择
+- 模糊匹配零结果 → 列出所有 `projects/*/STATE.json` 中 `current_step != "done"` 的项目
+- 用户仍无法定位 → 🛑 STOP，要求用户提供精确项目名或新建项目
 
 ### 用户问"项目健康度如何"
 
